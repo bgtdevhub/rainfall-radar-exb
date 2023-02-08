@@ -1,0 +1,55 @@
+/* settings */
+.table-color {
+  width: 100%;
+  height: 10px;
+  align-self: end;
+  margin-bottom: 2px;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: 45px 180px 35px;
+  column-gap: 3px;
+  margin-bottom: 5px;
+}
+
+.color-dropdown {
+  overflow-y: scroll;
+  height: 500px;
+}
+
+.color-dropdown-item:hover {
+  background: rgba(0, 127, 148, 0.2) !important;
+}
+
+.div-dropdown-item {
+  width: 100%;
+  z-index: -99;
+}
+
+/* main */
+.main-grid {
+  display: grid;
+  grid-template-columns: 270px 270px 270px;
+  margin-bottom: 30px;
+  column-gap: 5px;
+}
+
+@media screen and (max-width: 480px) {
+  .main-grid {
+    grid-template-columns: 270px;
+    row-gap: 5px;
+  }
+
+  .color-grid {
+    margin-bottom: 0;
+  }
+
+  .color-grid-1 {
+    grid-row: 2 / 2;
+  }
+
+  .color-grid-2 {
+    grid-row: 3 / 3;
+  }
+}

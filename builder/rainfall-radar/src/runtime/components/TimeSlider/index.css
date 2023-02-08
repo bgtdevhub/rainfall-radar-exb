@@ -1,0 +1,62 @@
+.nav-button {
+  border: 0px;
+  outline: 0px;
+  background-color: white !important;
+  margin-bottom: 3px;
+}
+
+.nav-button :hover {
+  background-color: white !important;
+}
+
+.btn.disabled .nav-icon {
+  filter: invert(91%) sepia(33%) saturate(1%) hue-rotate(197deg)
+    brightness(106%) contrast(65%);
+}
+
+.date-grid {
+  display: grid;
+  grid-template-columns: 40px 220px;
+  column-gap: 3px;
+}
+
+.date-text {
+  grid-row: 1/1;
+  grid-column: 1 / span 2;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  padding: 5px 20px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  background-color: white;
+}
+
+.time-slider {
+  grid-row: 2/2;
+  grid-column: 2/2;
+  padding: 0px 8px;
+  justify-self: center;
+  align-self: center;
+  background-color: white;
+  height: 30px;
+  border-radius: 2px;
+}
+
+.play-button {
+  grid-row: 2/2;
+  grid-column: 1/1;
+  justify-self: center;
+  align-self: center;
+}
+
+@media screen and (max-width: 480px) {
+  .nav-button {
+    width: 25px;
+    height: 60px;
+    margin-top: 21px;
+    margin-bottom: 0px;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+  }
+}
