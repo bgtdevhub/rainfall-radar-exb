@@ -8,9 +8,9 @@
 
 .color-grid {
   display: grid;
-  grid-template-columns: 45px 180px 35px;
+  grid-template-columns: 40px 180px 40px;
   column-gap: 3px;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 .color-dropdown {
@@ -30,26 +30,7 @@
 /* main */
 .main-grid {
   display: grid;
-  grid-template-columns: 270px 270px 270px;
+  grid-template-columns: 270px;
   margin-bottom: 30px;
   column-gap: 5px;
-}
-
-@media screen and (max-width: 480px) {
-  .main-grid {
-    grid-template-columns: 270px;
-    row-gap: 5px;
-  }
-
-  .color-grid {
-    margin-bottom: 0;
-  }
-
-  .color-grid-1 {
-    grid-row: 2 / 2;
-  }
-
-  .color-grid-2 {
-    grid-row: 3 / 3;
-  }
 }

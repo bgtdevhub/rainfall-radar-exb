@@ -51,8 +51,6 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
             <h6>{cs.text}</h6>
             <small>Rain</small>
             {generateColorLegend(cs.value, true, false)}
-            <small>Snow</small>
-            {generateColorLegend(cs.value, false, false)}
           </div>
         </DropdownItem>
       );

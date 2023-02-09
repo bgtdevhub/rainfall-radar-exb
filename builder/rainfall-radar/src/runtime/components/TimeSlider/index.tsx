@@ -5,7 +5,7 @@ import { RainviewerItem } from '../../../config';
 
 import './index.css';
 
-const { useLayoutEffect, useRef } = React;
+const { useCallback, useLayoutEffect, useRef } = React;
 
 interface TimeSliderProps {
   timePath: RainviewerItem;
@@ -16,7 +16,11 @@ interface TimeSliderProps {
 }
 
 const renderTimePath = (time: number): string => {
-  return new Date(time * 1000).toString();
+  return new Date(time * 1000).toLocaleString([], {
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  });
 };
 
 const MapDatepicker = ({
@@ -34,17 +38,21 @@ const MapDatepicker = ({
   const tpIndexRef = useRef(tpIndex);
   const frame = useRef(0);
 
+  const getNextTime = useCallback(() => {
+    tpIndexRef.current =
+      tpIndexRef.current === timePathList.length - 1
+        ? 0
+        : tpIndexRef.current + 1;
+    setTimePath(timePathList[tpIndexRef.current]);
+  }, [setTimePath, timePathList]);
+
   useLayoutEffect(() => {
     let intervalPlay: NodeJS.Timer;
     const fps = 7;
 
     const playProcess = () => {
       intervalPlay = setTimeout(() => {
-        tpIndexRef.current =
-          tpIndexRef.current === timePathList.length - 1
-            ? 0
-            : tpIndexRef.current + 1;
-        setTimePath(timePathList[tpIndexRef.current]);
+        getNextTime();
         frame.current = requestAnimationFrame(playProcess);
       }, 1000 / fps);
     };
@@ -60,11 +68,15 @@ const MapDatepicker = ({
       clearTimeout(intervalPlay);
       cancelAnimationFrame(frame.current);
     };
-  }, [play, setTimePath, timePathList]);
+  }, [getNextTime, play]);
 
   // toggle play pause
   const onTogglePlay = () => {
     setPlay(!play);
+  };
+
+  const onNextTime = () => {
+    getNextTime();
   };
 
   const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,31 +93,44 @@ const MapDatepicker = ({
 
   return (
     <div className="date-grid">
-      <p
-        style={{ color: `${getTextColor()}` }}
-        className="date-text"
-        aria-label="Date Text"
-      >
-        {renderTimePath(timePath.time)}
-      </p>
       <CalciteButton
-        aria-label="Play Pause"
+        title="Play Pause"
         iconStart={play ? 'pause-f' : 'play-f'}
         round
         onClick={onTogglePlay}
         // disabled={prevDisabled}
         className="play-button"
       ></CalciteButton>
-      <Slider
-        aria-label="Time Slider"
-        className="time-slider"
-        max={timePathList.length - 1}
-        min={0}
-        step={1}
-        defaultValue={tpIndexRef.current}
-        value={tpIndexRef.current}
-        onChange={onTimeChange}
-      />
+      <div className="text-slide-div">
+        <div className="text-div">
+          <p
+            style={{ color: `${getTextColor()}` }}
+            className="label-text date-text"
+            aria-label="Date Text"
+          >
+            {renderTimePath(timePath.time)}
+          </p>
+          <p className="label-text now-text">Now</p>
+        </div>
+        <Slider
+          aria-label="Time Slider"
+          className="time-slider"
+          max={timePathList.length - 1}
+          min={0}
+          step={1}
+          defaultValue={tpIndexRef.current}
+          value={tpIndexRef.current}
+          onChange={onTimeChange}
+        />
+      </div>
+      <CalciteButton
+        title="Next Time"
+        iconStart="end-f"
+        round
+        onClick={onNextTime}
+        // disabled={prevDisabled}
+        className="play-button"
+      ></CalciteButton>
     </div>
   );
 };

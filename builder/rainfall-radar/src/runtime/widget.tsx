@@ -56,9 +56,9 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         copyright:
           '<a href="https://www.rainviewer.com/api.html">Rainviewer</a> | Bureau of Meteorology Australia',
         title: `Rainviewer for ${id}`,
-        opacity,
         listMode: 'hide',
         visible: false,
+        opacity,
         id
       });
 
@@ -135,7 +135,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
       fetchTimePath();
 
       let timeout = getRoundUpUnixTs() - new Date().getTime() / 1000;
-      timeout = Math.round(timeout * 1000 + 60000); // add 30 seconds to ensure data readiness
+      timeout = Math.round(timeout * 1000 + 60000); // add 60 seconds to ensure data readiness
 
       // run 1 time
       intervalFetch = setTimeout(() => {
@@ -206,7 +206,6 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
             setPlay={setPlay}
             timePathList={timePathList}
           />
-          {generateColorLegend(colorScheme, false)}
         </div>
       )}
       {/* <div>

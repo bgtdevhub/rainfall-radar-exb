@@ -9,6 +9,6 @@
   "author": "BGT Devhub",
   "license": "ISC",
   "dependencies": {
-    "date-fns": "^2.29.3"
+    "react-draggable": "^4.4.5"
   }
 }
