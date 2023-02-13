@@ -23,31 +23,20 @@ export const lat2tile = (lat: number, zoom: number): number => {
   );
 };
 
-// generate tile ID
-export const generateTileID = (date: number): string => `base-${date}`;
+/**
+ * generate tile ID based on date
+ * @param date date
+ * @returns
+ */
+export const generateTileID = (date: number): string =>
+  `rainfall-radar-base-${date}`;
 
-const roundDownTo = (roundTo: number) => (x: number) =>
-  Math.floor(x / roundTo) * roundTo;
-
-const roundUpTo = (roundTo: number) => (x: number) =>
-  Math.ceil(x / roundTo) * roundTo;
-
-// generate round down 10 minutes in unix
-export const getRoundDownUnixTs = (): number => {
-  const roundDownTo10Minutes = roundDownTo(1000 * 60 * 10);
-  const roundDate = roundDownTo10Minutes(new Date().getTime());
-
-  return roundDate / 1000;
-};
-
-// generate round up 10 minutes in unix
-export const getRoundUpUnixTs = (): number => {
-  const roundUpTo10Minutes = roundUpTo(1000 * 60 * 10);
-  const roundDate = roundUpTo10Minutes(new Date().getTime());
-
-  return roundDate / 1000;
-};
-
+/**
+ * find layer helper
+ * @param layers layer collections
+ * @param toFind wildcard to find
+ * @returns
+ */
 export const findLayers = (
   layers: __esri.Collection<__esri.Layer>,
   toFind: string
@@ -55,6 +44,65 @@ export const findLayers = (
   return layers.filter((y: __esri.Layer) => y.id.includes(toFind)).toArray();
 };
 
+/**
+ * generic round down
+ * @param roundTo number to round down to
+ * @returns
+ */
+const roundDownTo = (roundTo: number) => (x: number) =>
+  Math.floor(x / roundTo) * roundTo;
+
+/**
+ * generic round up
+ * @param roundTo number to round up to
+ * @returns
+ */
+const roundUpTo = (roundTo: number) => (x: number) =>
+  Math.ceil(x / roundTo) * roundTo;
+
+/**
+ * generate round down 10 minutes in unix
+ * @returns
+ */
+export const getRoundDownUnixTs = (): number => {
+  const roundDownTo10Minutes = roundDownTo(1000 * 60 * 10);
+  const roundDate = roundDownTo10Minutes(new Date().getTime());
+
+  return roundDate / 1000;
+};
+
+/**
+ * generate round up 10 minutes in unix
+ * @returns
+ */
+export const getRoundUpUnixTs = (): number => {
+  const roundUpTo10Minutes = roundUpTo(1000 * 60 * 10);
+  const roundDate = roundUpTo10Minutes(new Date().getTime());
+
+  return roundDate / 1000;
+};
+
+const appendZero = (value: number): string => {
+  return value < 10 ? `0${value}` : `${value}`;
+};
+
+export const getBOMPath = (unixts: number): string => {
+  const d = new Date(unixts * 1000);
+  const year = d.getFullYear();
+  const month = appendZero(d.getMonth() + 1);
+  const date = appendZero(d.getDate());
+  const hour = appendZero(d.getHours());
+  const minutes = appendZero(d.getMinutes());
+  return `${year}${month}${date}${hour}${minutes}`;
+};
+
+/**
+ * Generate Colour scheme for Rainviewer
+ * @param code colour code
+ * @param rain rain data or not
+ * @param label need label or not
+ * @returns
+ */
 export const generateColorLegend = (
   code: string,
   rain = true,

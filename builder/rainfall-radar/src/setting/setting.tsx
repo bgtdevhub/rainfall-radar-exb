@@ -13,13 +13,12 @@ import {
   SettingSection,
   SettingRow
 } from 'jimu-ui/advanced/setting-components';
-import { IMConfig, colorScheme } from '../config';
+import { IMConfig, colorScheme, dataSource } from '../config';
 import { generateColorLegend } from '../runtime/components/Utils';
 import '../runtime/widget.css';
 
 const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
   const propChange = (obj: string, value: any) => {
-    console.log(value);
     props.onSettingChange({
       id: props.id,
       config: {
@@ -36,7 +35,17 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
     });
   };
 
-  const renderDropdownItem = () => {
+  const getDataList = (list: string) => {
+    switch (list) {
+      case 'dataSource':
+        return dataSource;
+      case 'colorScheme':
+      default:
+        return colorScheme;
+    }
+  };
+
+  const renderColorDropdownItem = () => {
     return colorScheme.map((cs) => {
       return (
         <DropdownItem
@@ -57,8 +66,26 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
     });
   };
 
-  const getColorSchemeText = () => {
-    const x = colorScheme.find((cs) => cs.value === props.config.colorScheme);
+  // const renderDropdownItem = (list: string) => {
+  //   const data = getDataList(list);
+  //   return data.map((cs) => {
+  //     return (
+  //       <DropdownItem
+  //         key={cs.value}
+  //         value={cs.value}
+  //         onClick={(e: React.ChangeEvent<HTMLInputElement>) => {
+  //           propChange(list, e.target.value);
+  //         }}
+  //       >
+  //         {cs.text}
+  //       </DropdownItem>
+  //     );
+  //   });
+  // };
+
+  const getDropDownText = (list: string) => {
+    const data = getDataList(list);
+    const x = data.find((cs) => cs.value === props.config[list]);
     return x.text;
   };
 
@@ -72,13 +99,21 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
           />
         </SettingRow>
       </SettingSection>
+      {/* <SettingSection title="Data Source">
+        <SettingRow>
+          <Dropdown fluid title="Select Data Source">
+            <DropdownButton>{getDropDownText('dataSource')}</DropdownButton>
+            <DropdownMenu>{renderDropdownItem('dataSource')}</DropdownMenu>
+          </Dropdown>
+        </SettingRow>
+      </SettingSection> */}
       <SettingSection title="Appearance">
         <SettingRow>Color Scheme</SettingRow>
         <SettingRow>
           <Dropdown fluid title="Select Colour Scheme">
-            <DropdownButton>{getColorSchemeText()}</DropdownButton>
+            <DropdownButton>{getDropDownText('colorScheme')}</DropdownButton>
             <DropdownMenu className="color-dropdown">
-              {renderDropdownItem()}
+              {renderColorDropdownItem()}
             </DropdownMenu>
           </Dropdown>
         </SettingRow>
@@ -100,6 +135,16 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
               className="ml-auto mr-0"
               checked={props.config.playOnLoad}
               onChange={(e) => propChange('playOnLoad', e.target.checked)}
+            />
+          </label>
+        </SettingRow>
+        <SettingRow>
+          <label className="w-100 justify-content-start">
+            Switch to relative time
+            <Switch
+              className="ml-auto mr-0"
+              checked={props.config.relativeTime}
+              onChange={(e) => propChange('relativeTime', e.target.checked)}
             />
           </label>
         </SettingRow>

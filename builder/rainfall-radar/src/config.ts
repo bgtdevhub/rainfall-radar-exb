@@ -2,14 +2,15 @@ import { ImmutableObject } from 'seamless-immutable';
 
 export interface Config {
   colorScheme: string;
-  // tileURL: string;
   coverageURL: string;
   playOnLoad: boolean;
   opacity: number;
+  relativeTime: boolean;
+  dataSource: string;
 }
 
 export interface RainviewerItem {
-  time: number;
+  time: number; // unix time for rainviewer, yyyyMMddhhmm for BOM
   path: string;
 }
 
@@ -22,6 +23,11 @@ export const colorScheme = [
   { value: '6', text: 'NEXRAD Level III' },
   { value: '7', text: 'Rainbow @ SELEX-SI' },
   { value: '8', text: 'Dark Sky' }
+];
+
+export const dataSource = [
+  { value: '1', text: 'RainViewer' },
+  { value: '2', text: 'BOM Australia' }
 ];
 
 export const rainColorCodes = {

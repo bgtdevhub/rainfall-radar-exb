@@ -4,6 +4,7 @@ import { CalciteButton } from 'calcite-components';
 import { RainviewerItem } from '../../../config';
 
 import './index.css';
+import { useEffect } from 'react';
 
 const { useCallback, useLayoutEffect, useRef } = React;
 
@@ -13,9 +14,20 @@ interface TimeSliderProps {
   play: boolean;
   setPlay: Function;
   timePathList: RainviewerItem[];
+  relativeTime: boolean;
 }
 
-const renderTimePath = (time: number): string => {
+const renderTimePath = (time: number, relativeTime: boolean): string => {
+  if (relativeTime) {
+    const currentTime = new Date().getTime() / 1000;
+    const diff = currentTime - time;
+    const minutes = Math.floor(diff / 60);
+
+    return minutes > 0
+      ? `${minutes} minutes ago`
+      : `In ${Math.abs(minutes)} minutes`;
+  }
+
   return new Date(time * 1000).toLocaleString([], {
     hour: 'numeric',
     minute: 'numeric',
@@ -28,14 +40,10 @@ const MapDatepicker = ({
   setTimePath,
   play,
   setPlay,
-  timePathList
+  timePathList,
+  relativeTime
 }: TimeSliderProps): JSX.Element => {
-  const tpIndex =
-    timePathList.length === 1
-      ? 0
-      : timePathList.findIndex((tp) => tp.time === timePath.time);
-
-  const tpIndexRef = useRef(tpIndex);
+  const tpIndexRef = useRef(12);
   const frame = useRef(0);
 
   const getNextTime = useCallback(() => {
@@ -46,9 +54,28 @@ const MapDatepicker = ({
     setTimePath(timePathList[tpIndexRef.current]);
   }, [setTimePath, timePathList]);
 
+  // toggle play pause
+  const onTogglePlay = () => {
+    setPlay(!play);
+  };
+
+  const onNextTime = () => {
+    getNextTime();
+  };
+
+  const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTimePath(timePathList[e.target.valueAsNumber]);
+  };
+
+  useEffect(() => {
+    tpIndexRef.current = timePathList.findIndex(
+      (tp) => tp.time === timePath.time
+    );
+  }, [timePath, timePathList]);
+
   useLayoutEffect(() => {
     let intervalPlay: NodeJS.Timer;
-    const fps = 7;
+    const fps = 5;
 
     const playProcess = () => {
       intervalPlay = setTimeout(() => {
@@ -70,26 +97,12 @@ const MapDatepicker = ({
     };
   }, [getNextTime, play]);
 
-  // toggle play pause
-  const onTogglePlay = () => {
-    setPlay(!play);
-  };
-
-  const onNextTime = () => {
-    getNextTime();
-  };
-
-  const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTimePath(timePathList[e.target.valueAsNumber]);
-    tpIndexRef.current = e.target.valueAsNumber;
-  };
-
-  const getTextColor = () => {
-    if (timePath.path.includes('nowcast_')) return 'green';
-    if (timePathList.length !== 1 && timePath.time !== timePathList[12].time)
-      return 'black';
-    return 'blue';
-  };
+  // const getTextColor = () => {
+  //   if (timePath.path.includes('nowcast_')) return 'green';
+  //   if (timePathList.length !== 1 && timePath.time !== timePathList[12].time)
+  //     return 'black';
+  //   return 'blue';
+  // };
 
   return (
     <div className="date-grid">
@@ -104,11 +117,11 @@ const MapDatepicker = ({
       <div className="text-slide-div">
         <div className="text-div">
           <p
-            style={{ color: `${getTextColor()}` }}
+            // style={{ color: `${getTextColor()}` }}
             className="label-text date-text"
             aria-label="Date Text"
           >
-            {renderTimePath(timePath.time)}
+            {renderTimePath(timePath.time, relativeTime)}
           </p>
           <p className="label-text now-text">Now</p>
         </div>
@@ -119,7 +132,7 @@ const MapDatepicker = ({
           min={0}
           step={1}
           defaultValue={tpIndexRef.current}
-          value={tpIndexRef.current}
+          value={timePathList.findIndex((tp) => tp.time === timePath.time)}
           onChange={onTimeChange}
         />
       </div>

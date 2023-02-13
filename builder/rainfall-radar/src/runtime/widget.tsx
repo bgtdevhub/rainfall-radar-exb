@@ -2,12 +2,13 @@ import { React, AllWidgetProps } from 'jimu-core';
 import { JimuMapViewComponent, JimuMapView } from 'jimu-arcgis';
 import WebTileLayer from 'esri/layers/WebTileLayer';
 import reactiveUtils from 'esri/core/reactiveUtils';
-import { Loading } from 'jimu-ui';
+import { Alert, Loading } from 'jimu-ui';
 import { IMConfig, RainviewerItem } from '../config';
 import {
   findLayers,
   generateColorLegend,
   generateTileID,
+  getBOMPath,
   getRoundDownUnixTs,
   getRoundUpUnixTs
 } from './components/Utils';
@@ -30,7 +31,9 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     coverageURL, // Rainviewer Coverage API,
     colorScheme, // color scheme
     playOnLoad, // play on load
-    opacity
+    opacity,
+    relativeTime, // relative or exact time
+    dataSource // data source for query
   } = props.config;
 
   const [timePath, setTimePath] = useState<RainviewerItem>(initialTimePath);
@@ -39,8 +42,10 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   ]);
   const [firstLoad, setFirstLoad] = useState<boolean>(true);
   const [play, setPlay] = useState<boolean>(playOnLoad);
+  const [mapLoad, setMapLoad] = useState<boolean>(false);
 
   const jmvObjRef = useRef<JimuMapView>(null);
+  const pastTimePathRef = useRef<RainviewerItem>(null);
 
   // BOM API
   // https://api.weather.bom.gov.au/v1/rainradar/tiles/202302030250/9/469/307.png
@@ -49,13 +54,23 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   const generateWebTileLayer = useCallback(
     (tPath: RainviewerItem): WebTileLayer => {
       const id = generateTileID(tPath.time);
+
+      const urlTemplate =
+        dataSource === '1'
+          ? `https://tilecache.rainviewer.com/${tPath.path}/256/{z}/{x}/{y}/${colorScheme}/1_0.png`
+          : `https://api.weather.bom.gov.au/v1/rainradar/tiles/${tPath.path}/{z}/{y}/{x}.png`;
+
+      const copyright =
+        dataSource === '1'
+          ? '<a href="https://www.rainviewer.com/api.html">Rainviewer</a>'
+          : '<a href="http://www.bom.gov.au/">Bureau of Meteorology Australia</a>';
+
       // Create a WebTileLayer for Nearmap imagery.
       // We are using tileinfo we created earlier.
       const wtl = new WebTileLayer({
-        urlTemplate: `https://tilecache.rainviewer.com/${tPath.path}/256/{z}/{x}/{y}/${colorScheme}/1_0.png`,
-        copyright:
-          '<a href="https://www.rainviewer.com/api.html">Rainviewer</a> | Bureau of Meteorology Australia',
-        title: `Rainviewer for ${id}`,
+        urlTemplate,
+        copyright,
+        title: `Rainfall Radar for ${id}`,
         listMode: 'hide',
         visible: false,
         opacity,
@@ -68,7 +83,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 
       return wtl;
     },
-    [colorScheme, opacity]
+    [colorScheme, dataSource, opacity]
   );
 
   const loadMapTask = useCallback(
@@ -84,20 +99,46 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   // remove all map layers
   const mapCleanupTask = useCallback((): void => {
     if (jmvObjRef.current !== null) {
-      const oldLayers = findLayers(jmvObjRef.current.view.map.layers, 'base-');
+      const oldLayers = findLayers(
+        jmvObjRef.current.view.map.layers,
+        'rainfall-radar-base-'
+      );
       jmvObjRef.current.view.map.removeMany(oldLayers);
     }
   }, []);
 
   // show or hide map
-  const showHideMapTask = (tPath: RainviewerItem, show = true) => {
-    const oldLayers = findLayers(
-      jmvObjRef.current.view.map.layers,
-      `${tPath.time}`
-    );
-    if (oldLayers.length !== 0) {
-      oldLayers[0].listMode = show ? 'show' : 'hide';
-      oldLayers[0].visible = !!show;
+  const showHideMapTask = (tPath: RainviewerItem) => {
+    if (jmvObjRef.current !== null) {
+      let oldLayers: __esri.Layer[] = [];
+
+      const newLayers = findLayers(
+        jmvObjRef.current.view.map.layers,
+        `${tPath.time}`
+      );
+
+      if (
+        pastTimePathRef.current &&
+        pastTimePathRef.current.time !== tPath.time
+      ) {
+        oldLayers = findLayers(
+          jmvObjRef.current.view.map.layers,
+          `${pastTimePathRef.current.time}`
+        );
+      }
+
+      if (newLayers.length !== 0) {
+        newLayers[0].listMode = 'show';
+        newLayers[0].visible = true;
+        if (oldLayers.length !== 0) {
+          setTimeout(() => {
+            // delayHideRef.current = requestAnimationFrame(() => {
+            oldLayers[0].listMode = 'hide';
+            oldLayers[0].visible = false;
+            // });
+          }, 80);
+        }
+      }
     }
   };
 
@@ -109,13 +150,15 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
       .then(() => {
         console.log('MapView is ready.');
       });
+
+    setMapLoad(true);
   };
 
   // get available image list
   useEffect(() => {
     let intervalFetch: NodeJS.Timer;
 
-    // fetch task
+    // fetch task for Rainviewer
     const fetchTimePath = () => {
       fetch(coverageURL)
         .then(async (response) => {
@@ -126,20 +169,43 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
           setTimePathList(dateList);
 
           setTimePath(data.radar.past[data.radar.past.length - 1]);
+          pastTimePathRef.current = data.radar.past[data.radar.past.length - 2];
         })
         .catch((err) => console.log(err));
     };
 
+    const generateDateList = () => {
+      let currentTime = getRoundDownUnixTs();
+      const newDateList: RainviewerItem[] = [];
+      const length = 16;
+      for (let dt = 0; dt < length; dt++) {
+        newDateList.push({
+          path: getBOMPath(currentTime),
+          time: currentTime
+        });
+        currentTime -= 600;
+      }
+      newDateList.sort((a, b) => a.time - b.time);
+      setTimePathList(newDateList);
+      setTimePath(newDateList[newDateList.length - 1]);
+      pastTimePathRef.current = newDateList[newDateList.length - 2];
+    };
+
+    const runFunction = () => {
+      if (dataSource === '1') fetchTimePath();
+      if (dataSource === '2') generateDateList();
+    };
+
     if (firstLoad) {
       // run on first load
-      fetchTimePath();
+      runFunction();
 
       let timeout = getRoundUpUnixTs() - new Date().getTime() / 1000;
       timeout = Math.round(timeout * 1000 + 60000); // add 60 seconds to ensure data readiness
 
       // run 1 time
       intervalFetch = setTimeout(() => {
-        fetchTimePath();
+        runFunction();
         setFirstLoad(false);
       }, timeout);
     } else {
@@ -147,7 +213,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
       const timeout = 600000; // 10.5 minutes
 
       intervalFetch = setInterval(() => {
-        fetchTimePath();
+        runFunction();
       }, timeout);
     }
 
@@ -155,7 +221,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
       clearTimeout(intervalFetch);
       clearInterval(intervalFetch);
     };
-  }, [coverageURL, firstLoad]);
+  }, [coverageURL, dataSource, firstLoad]);
 
   // time path list hook
   useEffect(() => {
@@ -171,9 +237,10 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 
   // time path hook
   useEffect(() => {
-    showHideMapTask(timePath, true);
+    showHideMapTask(timePath);
     return () => {
-      showHideMapTask(timePath, false);
+      pastTimePathRef.current = timePath;
+      // cancelAnimationFrame(delayHideRef.current);
     };
   }, [timePath]);
 
@@ -185,17 +252,17 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
           onActiveViewChange={activeViewChangeHandler}
         />
       )}
-      {/* <div className="alert-box">
+      <div className="alert-box">
         <Alert
           // closable
           form="basic"
           onClose={() => {}}
-          open={errorMode === NO_DATE || errorMode === NO_AUTHORIZE}
-          text={errorMode}
+          open={!mapLoad}
+          text={'Please select a map in settings'}
           type="info"
           withIcon
         />
-      </div> */}
+      </div>
       {jmvObjRef.current !== null && (
         <div className="main-grid">
           {generateColorLegend(colorScheme, true)}
@@ -205,6 +272,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
             play={play}
             setPlay={setPlay}
             timePathList={timePathList}
+            relativeTime={relativeTime}
           />
         </div>
       )}

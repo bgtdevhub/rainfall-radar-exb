@@ -8,7 +8,7 @@
 
 .color-grid {
   display: grid;
-  grid-template-columns: 40px 180px 40px;
+  grid-template-columns: 40px 205px 40px;
   column-gap: 3px;
   margin-bottom: 10px;
 }
@@ -30,7 +30,7 @@
 /* main */
 .main-grid {
   display: grid;
-  grid-template-columns: 270px;
+  grid-template-columns: 292px;
   margin-bottom: 30px;
   column-gap: 5px;
 }

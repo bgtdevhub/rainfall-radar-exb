@@ -1,9 +1,9 @@
 .date-grid {
   display: grid;
-  grid-template-columns: 45px 150px 45px;
-  column-gap: 10px;
+  grid-template-columns: 45px 137px 45px;
+  column-gap: 16px;
   background-color: white;
-  padding: 0px 5px 8px;
+  padding: 5px 16px 12px;
 }
 
 .text-slide-div {
@@ -12,7 +12,7 @@
 
 .text-div {
   display: grid;
-  grid-template-columns: 105px 45px;
+  grid-template-columns: 97px 40px;
   padding: 0;
   margin-bottom: 3px;
   height: 25px;
@@ -24,7 +24,7 @@
 }
 
 .date-text {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -34,14 +34,35 @@
 
 .time-slider {
   margin: 0;
-  background: linear-gradient(black, black);
+  background: linear-gradient(
+    var(--calcite-ui-border-input),
+    var(--calcite-ui-border-input)
+  );
   background-size: 3px 110%;
   background-repeat: no-repeat;
-  background-position: 113.5px;
+  background-position: 105px;
 }
 
 .play-button {
   justify-self: center;
   align-self: flex-end;
-  margin-bottom: 5px;
+}
+
+/* Slider */
+input[type='range'].time-slider::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 20px;
+}
+
+input[type='range'].time-slider::-webkit-slider-thumb {
+  margin-top: -5px;
+}
+
+input[type='range'].time-slider::-moz-range-track {
+  height: 5px;
+  border-radius: 20px;
+}
+
+input[type='range'].time-slider::-moz-range-thumb {
+  margin-top: -5px;
 }
