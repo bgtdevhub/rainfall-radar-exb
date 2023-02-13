@@ -6,7 +6,7 @@ Follow the steps from [here](https://www.esri.com/arcgis-blog/products/arcgis-en
 
 ### Github Manifest URL
 
-https://bgtdevhub.github.io/nearmap-widget/enterprise/rainfall-radar/manifest.json
+https://bgtdevhub.github.io/rainfall-radar-exb/enterprise/rainfall-radar/manifest.json
 
 ## How to use
 
