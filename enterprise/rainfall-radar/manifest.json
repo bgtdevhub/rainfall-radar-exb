@@ -1,0 +1,21 @@
+{
+  "name": "rainfall-radar",
+  "type": "widget",
+  "version": "1.10.0",
+  "exbVersion": "1.10.0",
+  "author": "BGT Devhub",
+  "description": "BOM Rainfall Radar",
+  "dependency": [
+    "jimu-arcgis"
+  ],
+  "copyright": "",
+  "license": "",
+  "properties": {},
+  "translatedLocales": [
+    "en"
+  ],
+  "defaultSize": {
+    "width": 800,
+    "height": 500
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "colorScheme": "2",
+  "playOnLoad": false,
+  "coverageURL": "https://api.rainviewer.com/public/weather-maps.json",
+  "opacity": 0.9,
+  "relativeTime": false,
+  "dataSource": "1"
+}
