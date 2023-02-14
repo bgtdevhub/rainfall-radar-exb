@@ -119,14 +119,31 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
         </SettingRow>
         <SettingRow>Opacity</SettingRow>
         <SettingRow>
+          <p>0</p>
           <Slider
-            aria-label="Rainviewer Opacity"
+            className="mx-3 mb-3"
+            aria-label="Rainfall Radar Opacity"
             defaultValue={props.config.opacity}
             max={1}
             min={0}
             onChange={(e) => propChange('opacity', e.target.value)}
             step={0.1}
           />
+          <p>1</p>
+        </SettingRow>
+        <SettingRow>Play Speed</SettingRow>
+        <SettingRow>
+          <p>1</p>
+          <Slider
+            className="mx-3 mb-3"
+            aria-label="Rainfall Radar Play Speed"
+            defaultValue={props.config.playSpeed}
+            max={30}
+            min={1}
+            onChange={(e) => propChange('playSpeed', e.target.value)}
+            step={1}
+          />
+          <p>30</p>
         </SettingRow>
         <SettingRow>
           <label className="w-100 justify-content-start">

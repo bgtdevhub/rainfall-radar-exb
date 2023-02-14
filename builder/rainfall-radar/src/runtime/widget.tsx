@@ -1,4 +1,10 @@
-import { React, AllWidgetProps } from 'jimu-core';
+import {
+  React,
+  ReactRedux,
+  AllWidgetProps,
+  getAppStore,
+  IMState
+} from 'jimu-core';
 import { JimuMapViewComponent, JimuMapView } from 'jimu-arcgis';
 import WebTileLayer from 'esri/layers/WebTileLayer';
 import reactiveUtils from 'esri/core/reactiveUtils';
@@ -17,6 +23,7 @@ import './widget.css';
 import TimeSlider from './components/TimeSlider';
 
 const { useEffect, useRef, useState, useCallback } = React;
+const { useSelector } = ReactRedux;
 
 const Widget = (props: AllWidgetProps<IMConfig>) => {
   // User Input Parameters
@@ -27,13 +34,13 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   };
 
   const {
-    // tileURL, // Nearmap Tile API URL base
     coverageURL, // Rainviewer Coverage API,
     colorScheme, // color scheme
     playOnLoad, // play on load
     opacity,
     relativeTime, // relative or exact time
-    dataSource // data source for query
+    dataSource, // data source for query
+    playSpeed // play speed
   } = props.config;
 
   const [timePath, setTimePath] = useState<RainviewerItem>(initialTimePath);
@@ -43,9 +50,16 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   const [firstLoad, setFirstLoad] = useState<boolean>(true);
   const [play, setPlay] = useState<boolean>(playOnLoad);
   const [mapLoad, setMapLoad] = useState<boolean>(false);
+  const [rainWidgetId, setRainWidgetId] = useState(null);
+  const [ctrlWidgetId, setCtrlWidgetId] = useState(null);
 
   const jmvObjRef = useRef<JimuMapView>(null);
   const pastTimePathRef = useRef<RainviewerItem>(null);
+  const timePathRef = useRef<RainviewerItem>(initialTimePath);
+
+  const widgetState = useSelector((state: IMState) => {
+    return state.widgetsRuntimeInfo;
+  });
 
   // BOM API
   // https://api.weather.bom.gov.au/v1/rainradar/tiles/202302030250/9/469/307.png
@@ -107,8 +121,8 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     }
   }, []);
 
-  // show or hide map
-  const showHideMapTask = (tPath: RainviewerItem) => {
+  // show and hide map for smoother play
+  const smoothShowHideMapTask = (tPath: RainviewerItem) => {
     if (jmvObjRef.current !== null) {
       let oldLayers: __esri.Layer[] = [];
 
@@ -142,8 +156,31 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     }
   };
 
+  const showHideMapTask = (tPath: RainviewerItem, show = true) => {
+    const newLayers = findLayers(
+      jmvObjRef.current.view.map.layers,
+      `${tPath.time}`
+    );
+    if (newLayers.length !== 0) {
+      newLayers[0].listMode = show ? 'show' : 'hide';
+      newLayers[0].visible = !!show;
+    }
+  };
+
   const activeViewChangeHandler = (jmvObj: JimuMapView) => {
     jmvObjRef.current = jmvObj;
+
+    // check if widget exist inside widget controller
+    const widgets = getAppStore().getState().appConfig.widgets;
+    const [rainfallWidget] = Object.values(widgets).filter(
+      (x) => x.uri === 'widgets/rainfall-radar/'
+    );
+    const [controllerWidget] = Object.values(widgets).filter(
+      (x) => x.uri === 'widgets/common/controller/'
+    );
+
+    if (rainfallWidget) setRainWidgetId(rainfallWidget.id);
+    if (controllerWidget) setCtrlWidgetId(controllerWidget.id);
 
     reactiveUtils
       .whenOnce(() => jmvObjRef.current.view.ready)
@@ -166,9 +203,10 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         })
         .then((data) => {
           const dateList = [...data.radar.past, ...data.radar.nowcast];
-          setTimePathList(dateList);
 
+          setTimePathList(dateList);
           setTimePath(data.radar.past[data.radar.past.length - 1]);
+          timePathRef.current = data.radar.past[data.radar.past.length - 1];
           pastTimePathRef.current = data.radar.past[data.radar.past.length - 2];
         })
         .catch((err) => console.log(err));
@@ -186,8 +224,10 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         currentTime -= 600;
       }
       newDateList.sort((a, b) => a.time - b.time);
+
       setTimePathList(newDateList);
       setTimePath(newDateList[newDateList.length - 1]);
+      timePathRef.current = newDateList[newDateList.length - 1];
       pastTimePathRef.current = newDateList[newDateList.length - 2];
     };
 
@@ -235,12 +275,25 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     };
   }, [loadMapTask, mapCleanupTask, timePathList]);
 
+  // widget in controller behaviour control
+  useEffect(() => {
+    const rainState = widgetState[rainWidgetId];
+    if (ctrlWidgetId && rainWidgetId && rainState.state === 'OPENED') {
+      console.log('open');
+      showHideMapTask(timePathRef.current);
+    }
+    return () => {
+      console.log('cleanup');
+      showHideMapTask(timePathRef.current, false);
+    };
+  }, [ctrlWidgetId, rainWidgetId, widgetState]);
+
   // time path hook
   useEffect(() => {
-    showHideMapTask(timePath);
+    timePathRef.current = timePath;
+    smoothShowHideMapTask(timePath);
     return () => {
       pastTimePathRef.current = timePath;
-      // cancelAnimationFrame(delayHideRef.current);
     };
   }, [timePath]);
 
@@ -273,6 +326,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
             setPlay={setPlay}
             timePathList={timePathList}
             relativeTime={relativeTime}
+            playSpeed={playSpeed}
           />
         </div>
       )}

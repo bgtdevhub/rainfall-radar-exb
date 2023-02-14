@@ -15,6 +15,7 @@ interface TimeSliderProps {
   setPlay: Function;
   timePathList: RainviewerItem[];
   relativeTime: boolean;
+  playSpeed: number;
 }
 
 const renderTimePath = (time: number, relativeTime: boolean): string => {
@@ -41,7 +42,8 @@ const MapDatepicker = ({
   play,
   setPlay,
   timePathList,
-  relativeTime
+  relativeTime,
+  playSpeed
 }: TimeSliderProps): JSX.Element => {
   const tpIndexRef = useRef(12);
   const frame = useRef(0);
@@ -75,13 +77,12 @@ const MapDatepicker = ({
 
   useLayoutEffect(() => {
     let intervalPlay: NodeJS.Timer;
-    const fps = 5;
 
     const playProcess = () => {
       intervalPlay = setTimeout(() => {
         getNextTime();
         frame.current = requestAnimationFrame(playProcess);
-      }, 1000 / fps);
+      }, 1000 / playSpeed);
     };
 
     if (play) {
@@ -95,14 +96,7 @@ const MapDatepicker = ({
       clearTimeout(intervalPlay);
       cancelAnimationFrame(frame.current);
     };
-  }, [getNextTime, play]);
-
-  // const getTextColor = () => {
-  //   if (timePath.path.includes('nowcast_')) return 'green';
-  //   if (timePathList.length !== 1 && timePath.time !== timePathList[12].time)
-  //     return 'black';
-  //   return 'blue';
-  // };
+  }, [getNextTime, play, playSpeed]);
 
   return (
     <div className="date-grid">
@@ -111,16 +105,11 @@ const MapDatepicker = ({
         iconStart={play ? 'pause-f' : 'play-f'}
         round
         onClick={onTogglePlay}
-        // disabled={prevDisabled}
         className="play-button"
       ></CalciteButton>
       <div className="text-slide-div">
         <div className="text-div">
-          <p
-            // style={{ color: `${getTextColor()}` }}
-            className="label-text date-text"
-            aria-label="Date Text"
-          >
+          <p className="label-text date-text" aria-label="Date Text">
             {renderTimePath(timePath.time, relativeTime)}
           </p>
           <p className="label-text now-text">Now</p>
@@ -141,7 +130,6 @@ const MapDatepicker = ({
         iconStart="end-f"
         round
         onClick={onNextTime}
-        // disabled={prevDisabled}
         className="play-button"
       ></CalciteButton>
     </div>

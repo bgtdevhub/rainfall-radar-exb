@@ -1,9 +1,8 @@
 /* settings */
 .table-color {
   width: 100%;
-  height: 10px;
+  height: 100%;
   align-self: end;
-  margin-bottom: 2px;
 }
 
 .color-grid {

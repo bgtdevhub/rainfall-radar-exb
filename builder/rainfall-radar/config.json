@@ -4,5 +4,6 @@
   "coverageURL": "https://api.rainviewer.com/public/weather-maps.json",
   "opacity": 0.9,
   "relativeTime": false,
+  "playSpeed": 1,
   "dataSource": "1"
 }

@@ -128,11 +128,11 @@ export const generateColorLegend = (
   }
   return (
     <div className={`color-grid color-grid-${type}`}>
-      <small className="text-left text-start text-white align-self-end">
+      <small className="text-center text-white bg-dark align-self-end rounded">
         Light
       </small>
       {tableRender}
-      <small className="text-right text-end text-white align-self-end">
+      <small className="text-center text-white bg-dark align-self-end rounded">
         Heavy
       </small>
     </div>

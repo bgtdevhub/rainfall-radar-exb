@@ -7,6 +7,7 @@ export interface Config {
   opacity: number;
   relativeTime: boolean;
   dataSource: string;
+  playSpeed: number;
 }
 
 export interface RainviewerItem {
