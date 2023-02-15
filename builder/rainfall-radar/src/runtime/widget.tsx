@@ -52,8 +52,8 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   const [mapLoad, setMapLoad] = useState<boolean>(false);
   const [rainWidgetId, setRainWidgetId] = useState(null);
   const [ctrlWidgetId, setCtrlWidgetId] = useState(null);
+  const [jimuView, setJimuView] = useState<JimuMapView>(null);
 
-  const jmvObjRef = useRef<JimuMapView>(null);
   const pastTimePathRef = useRef<RainviewerItem>(null);
   const timePathRef = useRef<RainviewerItem>(initialTimePath);
 
@@ -102,94 +102,102 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 
   const loadMapTask = useCallback(
     (tPath: RainviewerItem): void => {
-      if (jmvObjRef.current !== null) {
+      if (jimuView !== null) {
         const newMapLayer = generateWebTileLayer(tPath);
-        jmvObjRef.current.view.map.add(newMapLayer, 0);
+        jimuView.view.map.add(newMapLayer);
       }
     },
-    [generateWebTileLayer]
+    [generateWebTileLayer, jimuView]
   );
 
   // remove all map layers
   const mapCleanupTask = useCallback((): void => {
-    if (jmvObjRef.current !== null) {
+    if (jimuView !== null) {
       const oldLayers = findLayers(
-        jmvObjRef.current.view.map.layers,
+        jimuView.view.map.layers,
         'rainfall-radar-base-'
       );
-      jmvObjRef.current.view.map.removeMany(oldLayers);
+      jimuView.view.map.removeMany(oldLayers);
     }
-  }, []);
+  }, [jimuView]);
 
   // show and hide map for smoother play
-  const smoothShowHideMapTask = (tPath: RainviewerItem) => {
-    if (jmvObjRef.current !== null) {
-      let oldLayers: __esri.Layer[] = [];
+  const smoothShowHideMapTask = useCallback(
+    (tPath: RainviewerItem) => {
+      if (jimuView !== null) {
+        let oldLayers: __esri.Layer[] = [];
 
-      const newLayers = findLayers(
-        jmvObjRef.current.view.map.layers,
-        `${tPath.time}`
-      );
+        const newLayers = findLayers(jimuView.view.map.layers, `${tPath.time}`);
 
-      if (
-        pastTimePathRef.current &&
-        pastTimePathRef.current.time !== tPath.time
-      ) {
-        oldLayers = findLayers(
-          jmvObjRef.current.view.map.layers,
-          `${pastTimePathRef.current.time}`
-        );
-      }
+        if (
+          pastTimePathRef.current &&
+          pastTimePathRef.current.time !== tPath.time
+        ) {
+          oldLayers = findLayers(
+            jimuView.view.map.layers,
+            `${pastTimePathRef.current.time}`
+          );
+        }
 
-      if (newLayers.length !== 0) {
-        newLayers[0].listMode = 'show';
-        newLayers[0].visible = true;
-        if (oldLayers.length !== 0) {
-          setTimeout(() => {
-            // delayHideRef.current = requestAnimationFrame(() => {
-            oldLayers[0].listMode = 'hide';
-            oldLayers[0].visible = false;
-            // });
-          }, 80);
+        if (newLayers.length !== 0) {
+          newLayers[0].listMode = 'show';
+          newLayers[0].visible = true;
+          if (oldLayers.length !== 0) {
+            setTimeout(() => {
+              // delayHideRef.current = requestAnimationFrame(() => {
+              oldLayers[0].listMode = 'hide';
+              oldLayers[0].visible = false;
+              // });
+            }, 80);
+          }
         }
       }
-    }
-  };
+    },
+    [jimuView]
+  );
 
-  const showHideMapTask = (tPath: RainviewerItem, show = true) => {
-    const newLayers = findLayers(
-      jmvObjRef.current.view.map.layers,
-      `${tPath.time}`
-    );
-    if (newLayers.length !== 0) {
-      newLayers[0].listMode = show ? 'show' : 'hide';
-      newLayers[0].visible = !!show;
-    }
-  };
+  const showHideMapTask = useCallback(
+    (tPath: RainviewerItem, show = true) => {
+      if (jimuView !== null) {
+        const newLayers = findLayers(jimuView.view.map.layers, `${tPath.time}`);
+        if (newLayers.length !== 0) {
+          newLayers[0].listMode = show ? 'show' : 'hide';
+          newLayers[0].visible = !!show;
+        }
+      }
+    },
+    [jimuView]
+  );
 
   const activeViewChangeHandler = (jmvObj: JimuMapView) => {
-    jmvObjRef.current = jmvObj;
-
-    // check if widget exist inside widget controller
-    const widgets = getAppStore().getState().appConfig.widgets;
-    const [rainfallWidget] = Object.values(widgets).filter(
-      (x) => x.uri === 'widgets/rainfall-radar/'
-    );
-    const [controllerWidget] = Object.values(widgets).filter(
-      (x) => x.uri === 'widgets/common/controller/'
-    );
-
-    if (rainfallWidget) setRainWidgetId(rainfallWidget.id);
-    if (controllerWidget) setCtrlWidgetId(controllerWidget.id);
-
-    reactiveUtils
-      .whenOnce(() => jmvObjRef.current.view.ready)
-      .then(() => {
-        console.log('MapView is ready.');
-      });
-
-    setMapLoad(true);
+    if (jmvObj) {
+      setJimuView(jmvObj);
+    }
   };
+
+  useEffect(() => {
+    if (jimuView) {
+      // check if widget exist inside widget controller
+      const widgets = getAppStore().getState().appConfig.widgets;
+      const [rainfallWidget] = Object.values(widgets).filter(
+        (x) => x.uri === 'widgets/rainfall-radar/'
+      );
+      const [controllerWidget] = Object.values(widgets).filter(
+        (x) => x.uri === 'widgets/common/controller/'
+      );
+
+      if (rainfallWidget) setRainWidgetId(rainfallWidget.id);
+      if (controllerWidget) setCtrlWidgetId(controllerWidget.id);
+
+      reactiveUtils
+        .whenOnce(() => jimuView.view.ready)
+        .then(() => {
+          console.log('MapView is ready.');
+        });
+
+      setMapLoad(true);
+    }
+  }, [jimuView]);
 
   // get available image list
   useEffect(() => {
@@ -279,14 +287,12 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   useEffect(() => {
     const rainState = widgetState[rainWidgetId];
     if (ctrlWidgetId && rainWidgetId && rainState.state === 'OPENED') {
-      console.log('open');
       showHideMapTask(timePathRef.current);
     }
     return () => {
-      console.log('cleanup');
       showHideMapTask(timePathRef.current, false);
     };
-  }, [ctrlWidgetId, rainWidgetId, widgetState]);
+  }, [ctrlWidgetId, rainWidgetId, showHideMapTask, widgetState]);
 
   // time path hook
   useEffect(() => {
@@ -295,7 +301,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     return () => {
       pastTimePathRef.current = timePath;
     };
-  }, [timePath]);
+  }, [smoothShowHideMapTask, timePath]);
 
   return (
     <div className="jimu-widget">
@@ -316,7 +322,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
           withIcon
         />
       </div>
-      {jmvObjRef.current !== null && (
+      {jimuView !== null && (
         <div className="main-grid">
           {generateColorLegend(colorScheme, true)}
           <TimeSlider
@@ -340,7 +346,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
           </ModalBody>
         </Modal>
       </div> */}
-      {jmvObjRef.current === null && (
+      {jimuView === null && (
         <div>
           <Loading />
         </div>
